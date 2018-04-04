@@ -59,7 +59,7 @@ namespace DiscordServerCloner
 
                     if (list.Count > 0)
                     {
-                        var embed = new EmbedBuilder();
+                        var embed = new EmbedBuilder {Color = Color.Blue};
                         embed.AddField($"{user.Username} Roles Updated in {user.Guild.Name}", $"{string.Join("\n", list)}");
                         await user.SendMessageAsync("", false, embed.Build());
                     }

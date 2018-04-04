@@ -12,10 +12,10 @@ namespace DiscordServerCloner
 
         public static string ConfigPath = Path.Combine(AppContext.BaseDirectory, "setup/config.json");
 
-        public string BotName { get; set; } = "Discord bot base by PassiveModding";
+        public string BotName { get; set; } = "DiscordServerCloner by PassiveModding";
         public string Prefix { get; set; } = "=";
         public string Token { get; set; } = "Token";
-        public string HomeInvite { get; set; } = "https://discord.gg/n2Vs38n";
+        public string HomeInvite { get; set; } = "";
         public bool AutoRun { get; set; }
 
         public void Save(string dir = "setup/config.json")

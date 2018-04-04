@@ -21,7 +21,7 @@ namespace DiscordServerCloner
 
         public async Task Start()
         {
-            Console.Title = "Discord Bot Base By PassiveModding";
+            Console.Title = "DiscordServerCloner By PassiveModding";
 
 
             if (!Directory.Exists(Path.Combine(AppContext.BaseDirectory, "setup/")))
