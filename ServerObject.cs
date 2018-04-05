@@ -166,14 +166,6 @@ namespace DiscordServerCloner
                             x.Position = channel.Position;
                             x.Topic = channel.topic;
                         });
-                        var embed = new EmbedBuilder();
-                        foreach (var msg in channel.LastMessages)
-                        {
-                            embed.AddField(msg.author, $"{msg.text}\n\n" +
-                                                       $"{msg.timestamp}");
-                        }
-
-                        await chan.SendMessageAsync("", false, embed.Build());
                     }
 
                 await thechannel.SendMessageAsync("Complete!\n" +

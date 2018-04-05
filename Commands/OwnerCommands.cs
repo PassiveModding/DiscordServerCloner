@@ -110,6 +110,41 @@ namespace DiscordServerCloner.Commands
             await ServerObject.LoadRoles((SocketTextChannel) Context.Channel, guildid);
         }
 
+        [Command("LoadMessages", RunMode = RunMode.Async)]
+        [Summary("LoadMessages <OriginalGuildID>")]
+        [Remarks("Load The last 10 messages from each channel in the old server Configuration")]
+        public async Task LoadMessages([Remainder] ulong guildid = 0)
+        {
+            var server = ServerObject.GetSave(guildid);
+            foreach (var channel in Context.Guild.TextChannels)
+            {
+                try
+                {
+                    if (server.TextChannels.All(x => x.ChannelName != channel.Name)) continue;
+                    {
+                        var servchannel = server.TextChannels.First(x => x.ChannelName == channel.Name);
+
+                        if (servchannel.LastMessages.Count <= 0) continue;
+                        var embed = new EmbedBuilder();
+                        foreach (var msg in servchannel.LastMessages)
+                        {
+                            embed.AddField(msg.author, $"{msg.text}\n\n" +
+                                                       $"{msg.timestamp}");
+                        }
+
+                        await channel.SendMessageAsync("", false, embed.Build());
+
+                    }
+                }
+                catch
+                {
+                    //
+                }
+
+            }
+
+            await ReplyAsync("MessageChannel Updates Complete");
+        }
 
         [Command("ReassignRoles", RunMode = RunMode.Async)]
         [Summary("ReassignRoles <OriginalGuildID>")]
