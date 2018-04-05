@@ -87,8 +87,7 @@ namespace DiscordServerCloner
             embed.AddField($"{guild.CurrentUser.Username}",
                 $"Hi there, I am {guild.CurrentUser.Username}. Type `{Config.Load().Prefix}help` to see a list of my commands");
             embed.WithColor(Color.Blue);
-            embed.AddField("Bot Base By PassiveModding", $"Support Server: {Config.Load().HomeInvite} \n" +
-                                                         "Patreon: https://www.patreon.com/passivebot");
+            embed.AddField("DiscordServerCopier By PassiveModding", "Store: https://rocketr.net/sellers/passivemodding");
             try
             {
                 await guild.DefaultChannel.SendMessageAsync("", false, embed.Build());

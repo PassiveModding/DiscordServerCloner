@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -14,8 +15,16 @@ namespace DiscordServerCloner.Commands
     [RequireOwner]
     public class OwnerCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly CommandService _service;
+
+        public OwnerCommands(CommandService service)
+        {
+            _service = service;
+        }
+
+
         [Command("ClearServer", RunMode = RunMode.Async)]
-        [Summary("ClearServer <key>")]
+        [Summary("ClearServer <ClearKEY>")]
         [Remarks("Delete ALL Content from the current server")]
         public async Task ClearServer([Remainder]string clearKEY = null)
         {
@@ -23,7 +32,7 @@ namespace DiscordServerCloner.Commands
         }
 
         [Command("GetOverview", RunMode = RunMode.Async)]
-        [Summary("Geroverview <serverID>")]
+        [Summary("GetOverview <GuildID>")]
         [Remarks("Get a brief overview of a saved server's data")]
         public async Task GetOverView(ulong GuildID = 0)
         {
@@ -63,12 +72,12 @@ namespace DiscordServerCloner.Commands
         }
 
         [Command("NotifyUsersTest", RunMode = RunMode.Async)]
-        [Summary("NotifyUsersTest <servername> <message>")]
+        [Summary("NotifyUsersTest <OriginalGuildID> <message>")]
         [Remarks("Test a notification message before sending it")]
-        public async Task NotifyUsersTest(string ServerName, [Remainder]string Message)
+        public async Task NotifyUsersTest(ulong GuildId, [Remainder]string Message)
         {
             var embed = new EmbedBuilder();
-            var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{ServerName}.txt"));
+            var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{GuildId}.txt"));
             var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
             embed.AddField($"Message From {Context.Guild.Name} Guild",
                 $"This Message is notifying all logged users of the server: {ns.ServerName}\n\n" +
@@ -78,11 +87,11 @@ namespace DiscordServerCloner.Commands
         }
 
         [Command("NotifyUsers", RunMode = RunMode.Async)]
-        [Summary("NotifyUsers <servername> <message>")]
+        [Summary("NotifyUsers <OriginalGuildID> <message>")]
         [Remarks("try to message all users from a given server log")]
-        public async Task NotifyUsers(string ServerName, [Remainder]string Message)
+        public async Task NotifyUsers(ulong GuildId, [Remainder]string Message)
         {
-            await ServerObject.NotifyUsers(Context.Client, (SocketTextChannel)Context.Channel, ServerName, Message);
+            await ServerObject.NotifyUsers(Context.Client, (SocketTextChannel)Context.Channel, GuildId, Message);
         }
 
         [Command("SaveServer")]
@@ -94,27 +103,83 @@ namespace DiscordServerCloner.Commands
         }
 
         [Command("LoadRoles", RunMode = RunMode.Async)]
-        [Summary("LoadRoles")]
+        [Summary("LoadRoles <OriginalGuildID>")]
         [Remarks("Load The Given Server Roles Configuration")]
-        public async Task LoadRoles([Remainder] string ServerName = null)
+        public async Task LoadRoles([Remainder] ulong guildid = 0)
         {
-            await ServerObject.LoadRoles((SocketTextChannel) Context.Channel, ServerName);
+            await ServerObject.LoadRoles((SocketTextChannel) Context.Channel, guildid);
+        }
+
+
+        [Command("ReassignRoles", RunMode = RunMode.Async)]
+        [Summary("ReassignRoles <OriginalGuildID>")]
+        [Remarks("Give all users their roles from the old server")]
+        public async Task ReassignRoles([Remainder] ulong guildid = 0)
+        {
+            var server =  ServerObject.GetSave(guildid);
+
+                foreach (var role in server.Roles)
+                {
+                    if (Context.Guild.Users.Any(x => role.RoleMembers.Contains(x.Id)) && Context.Guild.Roles.Any(x => x.Name == role.RoleName))
+                    {
+                        var rol = Context.Guild.Roles.First(x => x.Name == role.RoleName);
+                        foreach (var user in Context.Guild.Users.Where(x => role.RoleMembers.Contains(x.Id)))
+                        {
+                            await user.AddRoleAsync(rol);
+                        }
+                    }
+                }
         }
 
         [Command("LoadBans", RunMode = RunMode.Async)]
-        [Summary("LoadBans")]
+        [Summary("LoadBans <OriginalGuildID>")]
         [Remarks("Load The Given Server Bans Configuration")]
-        public async Task LoadBans([Remainder] string ServerName = null)
+        public async Task LoadBans([Remainder] ulong GuildId = 0)
         {
-            await ServerObject.LoadBans((SocketTextChannel) Context.Channel, ServerName);
+            await ServerObject.LoadBans((SocketTextChannel) Context.Channel, GuildId);
         }
 
         [Command("LoadServer", RunMode = RunMode.Async)]
-        [Summary("LoadServer")]
+        [Summary("LoadServer <GuildID>")]
         [Remarks("Load The Given Server Configuration")]
         public async Task LoadServer(ulong GuildID = 0)
         {
             await ServerObject.LoadServer((SocketTextChannel) Context.Channel, GuildID);
+            var embed = new EmbedBuilder();
+            embed.WithColor(Color.Blue);
+            embed.AddField("Thankyou for Using DiscordServerCopier By PassiveModding", "Store: https://rocketr.net/sellers/passivemodding");
+            await ReplyAsync("", false, embed.Build());
+        }
+
+        [Command("help")]
+        [Summary("help")]
+        [Remarks("all help commands")]
+        public async Task HelpAsync()
+        {
+            var prefix = Config.Load().Prefix;
+            var embed = new EmbedBuilder
+            {
+                Color = new Color(114, 137, 218),
+                Title = $"{Config.Load().BotName} | Commands | Prefix: {prefix}"
+            };
+
+            foreach (var module in _service.Modules)
+            {
+                    var list = new List<string>();
+                    foreach (var command in module.Commands)
+                    {
+                        list.Add(
+                            $"`{prefix}{command.Summary}` - {command.Remarks}");
+                        if (string.Join("\n", list).Length <= 800) continue;
+                        embed.AddField(module.Name, string.Join("\n", list));
+                        list = new List<string>();
+                    }
+
+                    embed.AddField(module.Name, string.Join("\n", list));
+            }
+
+
+            await ReplyAsync("", false, embed.Build());
         }
 
         [Command("Stats")]
