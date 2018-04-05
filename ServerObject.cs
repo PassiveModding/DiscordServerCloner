@@ -40,6 +40,7 @@ namespace DiscordServerCloner
 
         public static async Task LoadServer(SocketTextChannel thechannel, ulong GuildId = 0)
         {
+            bool RoleError = false;
             var Guild = thechannel.Guild;
             if (GuildId == 0)
             {
@@ -93,11 +94,18 @@ namespace DiscordServerCloner
                             new GuildPermissions(role.GuildPermissions));
                         await rol.ModifyAsync(x =>
                         {
-                            x.Position = role.position;
                             x.Color = new Color(role.RawColour);
                             x.Mentionable = role.AllowMention;
                             x.Hoist = role.DisplaySeperately;
                         });
+                        try
+                        {
+                            await rol.ModifyAsync(x => x.Position = role.position);
+                        }
+                        catch
+                        {
+                            RoleError = true;
+                        }
                     }
 
                 await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = new GuildPermissions(ns.EveryonePerms));
@@ -170,6 +178,11 @@ namespace DiscordServerCloner
 
                 await thechannel.SendMessageAsync("Complete!\n" +
                                                   "NOTE: Use LoadBans to load the previous server's bans!");
+                if (RoleError)
+                {
+                    await thechannel.SendMessageAsync("Error Modifying Position of some roles (insufficient permissions in origin server)\n" +
+                                                      "You can manually rearrange roles to fix this!");
+                }
             }
         }
 

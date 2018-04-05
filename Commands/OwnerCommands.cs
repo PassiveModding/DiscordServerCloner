@@ -120,15 +120,25 @@ namespace DiscordServerCloner.Commands
 
                 foreach (var role in server.Roles)
                 {
-                    if (Context.Guild.Users.Any(x => role.RoleMembers.Contains(x.Id)) && Context.Guild.Roles.Any(x => x.Name == role.RoleName))
+                    try
                     {
-                        var rol = Context.Guild.Roles.First(x => x.Name == role.RoleName);
-                        foreach (var user in Context.Guild.Users.Where(x => role.RoleMembers.Contains(x.Id)))
+                        if (Context.Guild.Users.Any(x => role.RoleMembers.Contains(x.Id)) && Context.Guild.Roles.Any(x => x.Name == role.RoleName))
                         {
-                            await user.AddRoleAsync(rol);
+                            var rol = Context.Guild.Roles.First(x => x.Name == role.RoleName);
+                            foreach (var user in Context.Guild.Users.Where(x => role.RoleMembers.Contains(x.Id)))
+                            {
+                                await user.AddRoleAsync(rol);
+                            }
                         }
                     }
+                    catch
+                    {
+                        //
+                    }
+
                 }
+
+            await ReplyAsync("User Roles have been reassigned!");
         }
 
         [Command("LoadBans", RunMode = RunMode.Async)]
