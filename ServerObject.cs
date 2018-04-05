@@ -11,13 +11,13 @@ namespace DiscordServerCloner
 {
     public class ServerPairs
     {
-        public static List<serversused> PairList { get; set; }
+        public static List<serversused> PairList { get; set; } = new List<serversused>();
         public class serversused
         {
-            public string SavedServer { get; set; }
-            public string LoadedServer { get; set; }
+            public ulong SavedServer { get; set; }
+            public ulong LoadedServer { get; set; }
+            public DateTime TimeLoaded { get; set; }
         }
-
     }
 
     public class ServerObject
@@ -28,13 +28,22 @@ namespace DiscordServerCloner
         public IEnumerable<AudioChannel> AudioChannels { get; set; }
         public IEnumerable<Role> Roles { get; set; }
         public IEnumerable<ulong> Bans { get; set; }
-        public GuildPermissions EveryonePerms { get; set; }
+        public ulong EveryonePerms { get; set; }
         public IEnumerable<ulong> Users { get; set; }
 
-        public static async Task LoadServer(SocketTextChannel thechannel, string ServerName = null)
+        public static ServerObject GetSave(ulong GuildId)
         {
+            var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{GuildId}.txt"));
+            var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
+            return ns;
+        }
+
+        public static async Task LoadServer(SocketTextChannel thechannel, ulong GuildId = 0)
+        {
+
+
             var Guild = thechannel.Guild;
-            if (ServerName == null)
+            if (GuildId == 0)
             {
                 var saves = Directory.GetFiles(AppContext.BaseDirectory).Where(x => x.Contains(".txt"));
                 await thechannel.SendMessageAsync("Select a config\n" +
@@ -42,7 +51,39 @@ namespace DiscordServerCloner
             }
             else
             {
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{ServerName}.txt"));
+                if (File.Exists(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")))
+                {
+                    ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")));
+                }
+                else
+                {
+                    File.CreateText(Path.Combine(AppContext.BaseDirectory, "PairList.txt"));
+                }
+
+                try
+                {
+                    var nserx = new ServerPairs.serversused
+                    {
+                        LoadedServer = Guild.Id,
+                        SavedServer = GuildId,
+                        TimeLoaded = DateTime.UtcNow
+                    };
+                    if (ServerPairs.PairList == null)
+                    {
+                        ServerPairs.PairList = new List<ServerPairs.serversused>();
+                    }
+                    ServerPairs.PairList.Add(nserx);
+                    var serverobj = JsonConvert.SerializeObject(ServerPairs.PairList, Formatting.Indented);
+                    File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"PairList.txt"), serverobj);
+                    await thechannel.SendMessageAsync("TST");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+
+                var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{GuildId}.txt"));
                 var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
                 await thechannel.SendMessageAsync("Loaded Server Config!");
                 await Guild.ModifyAsync(x => x.Name = ns.ServerName);
@@ -57,7 +98,7 @@ namespace DiscordServerCloner
                         await rol.ModifyAsync(x => x.Color = new Optional<Color>(new Color(role.RawColour)));
                     }
 
-                await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = ns.EveryonePerms);
+                await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = new GuildPermissions(ns.EveryonePerms));
 
                 await thechannel.SendMessageAsync("Adding Categories!");
                 if (ns.Categories.Any())
@@ -271,7 +312,7 @@ namespace DiscordServerCloner
                         await rol.ModifyAsync(x => x.Position = role.position);
                     }
                 //modify the permissions of the @everyone role
-                await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = ns.EveryonePerms);
+                await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = new GuildPermissions(ns.EveryonePerms));
                 await channel.SendMessageAsync("Done!");
             }
         }
@@ -298,7 +339,7 @@ namespace DiscordServerCloner
                 //save the guild name
                 ns.ServerName = Guild.Name;
                 //save the @everyone role permissions
-                ns.EveryonePerms = Guild.EveryoneRole.Permissions;
+                ns.EveryonePerms = Guild.EveryoneRole.Permissions.RawValue;
                 //save each category with its name, position and permissions for each role
                 ns.Categories = Guild.CategoryChannels.Select(x =>
                     new Category
@@ -367,7 +408,7 @@ namespace DiscordServerCloner
 
                 //serialise the server object to a json string and save to txt file for later use.
                 var serverobj = JsonConvert.SerializeObject(ns, Formatting.Indented);
-                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"{Guild.Name}.txt"), serverobj);
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"{Guild.Id}.txt"), serverobj);
                 await Channel.SendMessageAsync("Server Saved.");
             }
             catch (Exception e)

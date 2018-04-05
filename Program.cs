@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Serilog;
 
 namespace DiscordServerCloner
@@ -50,6 +52,10 @@ namespace DiscordServerCloner
                                 "------------------------------------");
             }
 
+            if (File.Exists(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")))
+            {
+                ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")));
+            }
 
             var serviceProvider = ConfigureServices();
             _handler = new CommandHandler(serviceProvider);

@@ -33,38 +33,45 @@ namespace DiscordServerCloner
 
         private async Task _client_UserJoined(SocketGuildUser user)
         {
-            var serv = ServerObject.GetServer(user.Guild.Name);
-            if (serv != null)
+            if (ServerPairs.PairList.Any(x => x.LoadedServer == user.Guild.Id))
             {
-                if (serv.Roles.Any())
+                var server = ServerPairs.PairList.Where(x => x.LoadedServer == user.Guild.Id)
+                    .OrderBy(x => x.TimeLoaded).ToList();
+                var max = server.Max(x => x.TimeLoaded);
+                var serv = ServerObject.GetSave(server.First(x => x.TimeLoaded == max).SavedServer);
+                if (serv != null)
                 {
-                    var list = new List<string>();
-                    foreach (var role in serv.Roles)
+                    if (serv.Roles.Any())
                     {
-                        if (!role.RoleMembers.Contains(user.Id)) continue;
-                        try
+                        var list = new List<string>();
+                        foreach (var role in serv.Roles)
                         {
-                            var NewRole = user.Guild.Roles.FirstOrDefault(x => x.Name == role.RoleName);
-                            if (NewRole != null)
+                            if (!role.RoleMembers.Contains(user.Id)) continue;
+                            try
                             {
-                                await user.AddRoleAsync(NewRole);
-                                list.Add($"{NewRole.Name}");
+                                var NewRole = user.Guild.Roles.FirstOrDefault(x => x.Name == role.RoleName);
+                                if (NewRole != null)
+                                {
+                                    await user.AddRoleAsync(NewRole);
+                                    list.Add($"{NewRole.Name}");
+                                }
+                            }
+                            catch
+                            {
+                                //
                             }
                         }
-                        catch
-                        {
-                            //
-                        }
-                    }
 
-                    if (list.Count > 0)
-                    {
-                        var embed = new EmbedBuilder {Color = Color.Blue};
-                        embed.AddField($"{user.Username} Roles Updated in {user.Guild.Name}", $"{string.Join("\n", list)}");
-                        await user.SendMessageAsync("", false, embed.Build());
+                        if (list.Count > 0)
+                        {
+                            var embed = new EmbedBuilder {Color = Color.Blue};
+                            embed.AddField($"{user.Username} Roles Updated in {user.Guild.Name}", $"{string.Join("\n", list)}");
+                            await user.SendMessageAsync("", false, embed.Build());
+                        }
                     }
                 }
             }
+
         }
 
         private async Task _client_Ready()

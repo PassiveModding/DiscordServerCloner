@@ -22,6 +22,46 @@ namespace DiscordServerCloner.Commands
             await ServerObject.ClearServer(Context.Client, (SocketTextChannel) Context.Channel, clearKEY);
         }
 
+        [Command("GetOverview", RunMode = RunMode.Async)]
+        [Summary("Geroverview <serverID>")]
+        [Remarks("Get a brief overview of a saved server's data")]
+        public async Task GetOverView(ulong GuildID = 0)
+        {
+            if (GuildID == 0)
+            {
+                GuildID = Context.Guild.Id;
+            }
+            var serv = ServerObject.GetSave(GuildID);
+            if (serv == null)
+            {
+                await ReplyAsync("Server Not Saved!");
+                return;
+            }
+            var embed = new EmbedBuilder();
+            embed.Title = serv.ServerName;
+            if (serv.TextChannels.Any())
+            {
+                embed.AddField("Text Channels", string.Join("\n", serv.TextChannels.Select(x => x.ChannelName)));
+            }
+
+            if (serv.AudioChannels.Any())
+            {
+                embed.AddField("Audio Channels", string.Join("\n", serv.AudioChannels.Select(x => x.ChannelName)));
+            }
+
+            if (serv.Roles.Any())
+            {
+                embed.AddField("Roles", string.Join("\n", serv.Roles.Select(x => x.RoleName)));
+            }
+
+            if (serv.Categories.Any())
+            {
+            embed.AddField("Categories", string.Join("\n", serv.Categories.Select(x => x.CategoryName)));
+            }
+
+            await ReplyAsync("", false, embed.Build());
+        }
+
         [Command("NotifyUsersTest", RunMode = RunMode.Async)]
         [Summary("NotifyUsersTest <servername> <message>")]
         [Remarks("Test a notification message before sending it")]
@@ -72,9 +112,9 @@ namespace DiscordServerCloner.Commands
         [Command("LoadServer", RunMode = RunMode.Async)]
         [Summary("LoadServer")]
         [Remarks("Load The Given Server Configuration")]
-        public async Task LoadServer([Remainder] string ServerName = null)
+        public async Task LoadServer(ulong GuildID = 0)
         {
-            await ServerObject.LoadServer((SocketTextChannel) Context.Channel, ServerName);
+            await ServerObject.LoadServer((SocketTextChannel) Context.Channel, GuildID);
         }
 
         [Command("Stats")]
