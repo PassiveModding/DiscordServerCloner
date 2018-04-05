@@ -33,6 +33,8 @@ namespace DiscordServerCloner
 
         private async Task _client_UserJoined(SocketGuildUser user)
         {
+            
+
             if (ServerPairs.PairList.Any(x => x.LoadedServer == user.Guild.Id))
             {
                 var server = ServerPairs.PairList.Where(x => x.LoadedServer == user.Guild.Id)
@@ -71,7 +73,7 @@ namespace DiscordServerCloner
                     }
                 }
             }
-
+            await ServerObject.SaveServer(user.Guild.DefaultChannel);
         }
 
         private async Task _client_Ready()
