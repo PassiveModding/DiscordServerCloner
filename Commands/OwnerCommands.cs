@@ -49,7 +49,11 @@ namespace DiscordServerCloner.Commands
                     try
                     {
                         var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(file));
-                        embed.Description += $"{ns.ServerName} - {Path.GetFileNameWithoutExtension(file)} - {ns.LastSave}\n";
+                        embed.Description += $"{ns.ServerName} - {Path.GetFileNameWithoutExtension(file)} - {ns.LastSave}\n" +
+                                             $"Users: {ns.Users.Count()}\n" +
+                                             $"Roles: {ns.Roles.Count()}\n" +
+                                             $"Channels: {ns.TextChannels.Count() + ns.AudioChannels.Count()}\n" +
+                                             $"Bans: {ns.Bans.Count()}\n";
                     }
                     catch
                     {
