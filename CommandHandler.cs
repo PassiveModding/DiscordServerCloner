@@ -73,7 +73,7 @@ namespace DiscordServerCloner
                     }
                 }
             }
-            await ServerObject.SaveServer(user.Guild.DefaultChannel);
+            await ServerObject.SaveServer(user.Guild.DefaultChannel, false);
         }
 
         private async Task _client_Ready()

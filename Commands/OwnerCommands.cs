@@ -31,6 +31,44 @@ namespace DiscordServerCloner.Commands
             await ServerObject.ClearServer(Context.Client, (SocketTextChannel) Context.Channel, clearKEY);
         }
 
+        [Command("ShowList", RunMode = RunMode.Async)]
+        [Summary("ShowList")]
+        [Remarks("Show all saved servers")]
+        public async Task ShowList()
+        {
+            try
+            {
+                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).Where(x => x.Contains($".txt"));
+                var embed = new EmbedBuilder
+                {
+                    Description = "<ServerName> - <Guild ID> - <Last Save Time>\n" +
+                                  "```\n"
+                };
+                foreach (var file in saves)
+                {
+                    try
+                    {
+                        var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(file));
+                        embed.Description += $"{ns.ServerName} - {Path.GetFileNameWithoutExtension(file)} - {ns.LastSave}\n";
+                    }
+                    catch
+                    {
+                        //
+                    }
+                    
+                }
+
+                embed.Description += "```";
+                await ReplyAsync("", false, embed.Build());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+        }
+
         [Command("GetOverview", RunMode = RunMode.Async)]
         [Summary("GetOverview <GuildID>")]
         [Remarks("Get a brief overview of a saved server's data")]
@@ -77,8 +115,7 @@ namespace DiscordServerCloner.Commands
         public async Task NotifyUsersTest(ulong GuildId, [Remainder]string Message)
         {
             var embed = new EmbedBuilder();
-            var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{GuildId}.txt"));
-            var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
+            var ns = ServerObject.GetSave(GuildId);
             embed.AddField($"Message From {Context.Guild.Name} Guild",
                 $"This Message is notifying all logged users of the server: {ns.ServerName}\n\n" +
                 $"{Message}");
@@ -99,7 +136,7 @@ namespace DiscordServerCloner.Commands
         [Remarks("Save The Current Server Configuration")]
         public async Task SaveServer()
         {
-            await ServerObject.SaveServer((SocketTextChannel) Context.Channel);
+            await ServerObject.SaveServer((SocketTextChannel) Context.Channel, true);
         }
 
         [Command("LoadRoles", RunMode = RunMode.Async)]

@@ -30,33 +30,34 @@ namespace DiscordServerCloner
         public IEnumerable<ulong> Bans { get; set; }
         public ulong EveryonePerms { get; set; }
         public IEnumerable<ulong> Users { get; set; }
+        public DateTime LastSave { get; set; } = DateTime.MinValue;
 
         public static ServerObject GetSave(ulong GuildId)
         {
-            var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{GuildId}.txt"));
+            var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).First(x => x.Contains($"{GuildId}.txt"));
             var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
             return ns;
         }
 
         public static async Task LoadServer(SocketTextChannel thechannel, ulong GuildId = 0)
         {
-            bool RoleError = false;
+            var RoleError = false;
             var Guild = thechannel.Guild;
             if (GuildId == 0)
             {
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).Where(x => x.Contains(".txt"));
+                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).Where(x => x.Contains(".txt"));
                 await thechannel.SendMessageAsync("Select a config\n" +
                                                   $"{string.Join("\n", saves)}");
             }
             else
             {
-                if (File.Exists(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")))
+                if (File.Exists(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json")))
                 {
-                    ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")));
+                    ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json")));
                 }
                 else
                 {
-                    File.CreateText(Path.Combine(AppContext.BaseDirectory, "PairList.txt")).Close();
+                    File.CreateText(Path.Combine(AppContext.BaseDirectory, "setup/PairList.json")).Close();
                 }
 
                 try
@@ -73,7 +74,7 @@ namespace DiscordServerCloner
                     }
                     ServerPairs.PairList.Add(nserx);
                     var serverobj = JsonConvert.SerializeObject(ServerPairs.PairList, Formatting.Indented);
-                    File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"PairList.txt"), serverobj);
+                    File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json"), serverobj);
                 }
                 catch (Exception e)
                 {
@@ -81,8 +82,7 @@ namespace DiscordServerCloner
                     throw;
                 }
 
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{GuildId}.txt"));
-                var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
+                var ns = GetSave(GuildId);
                 await thechannel.SendMessageAsync("Loaded Server Config!");
                 await Guild.ModifyAsync(x => x.Name = ns.ServerName);
                 await thechannel.SendMessageAsync(
@@ -225,15 +225,14 @@ namespace DiscordServerCloner
             //ensure that the user picks the correct server config
             if (guildid == 0)
             {
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).Where(x => x.Contains(".txt"));
+                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).Where(x => x.Contains(".txt"));
                 await channel.SendMessageAsync("Select a config\n" +
                                                $"{string.Join("\n", saves)}");
             }
             else
             {
                 //deserialises the server file from json to ServerObject
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{guildid}.txt"));
-                var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
+                var ns = GetSave(guildid);
                 await channel.SendMessageAsync("Loaded Server Config!");
                 await channel.SendMessageAsync("Adding Bans!");
                 //Check to see if there are any bans
@@ -244,29 +243,19 @@ namespace DiscordServerCloner
             }
         }
 
-        public static ServerObject GetServer(string servername = null)
-        {
-            if (servername == null) return null;
-            var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{servername}.txt"));
-            var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
-            return ns;
-
-        }
-
         public static async Task NotifyUsers(DiscordSocketClient Client, SocketTextChannel channel, ulong GuildId = 0, string Message = null)
         {
             //ensure that the user picks the correct server config
             if (GuildId == 0)
             {
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).Where(x => x.Contains(".txt"));
+                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).Where(x => x.Contains(".txt"));
                 await channel.SendMessageAsync("Select a config\n" +
                                                $"{string.Join("\n", saves)}");
             }
             else
             {
                 //deserialises the server file from json to ServerObject
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{GuildId}.txt"));
-                var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
+                var ns = GetSave(GuildId);
                 await channel.SendMessageAsync("Loaded Server Config!");
                 var embed = new EmbedBuilder();
                         embed.AddField($"Message From {channel.Guild.Name} Guild",
@@ -297,15 +286,14 @@ namespace DiscordServerCloner
             var Guild = channel.Guild;
             if (guildid == 0)
             {
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).Where(x => x.Contains(".txt"));
+                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).Where(x => x.Contains(".txt"));
                 await channel.SendMessageAsync("Select a config\n" +
                                                $"{string.Join("\n", saves)}");
             }
             else
             {
                 //deserialises the server file from json to ServerObject
-                var saves = Directory.GetFiles(AppContext.BaseDirectory).First(x => x.Contains($"{guildid}.txt"));
-                var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
+                var ns = GetSave(guildid);
                 await channel.SendMessageAsync("Loaded Server Config!");
                 //Rename the server to the saved one
                 await Guild.ModifyAsync(x => x.Name = ns.ServerName);
@@ -343,7 +331,7 @@ namespace DiscordServerCloner
                 }).ToList();
         }
 
-        public static async Task SaveServer(SocketTextChannel Channel)
+        public static async Task SaveServer(SocketTextChannel Channel, bool ShowMessage)
         {
             var Guild = Channel.Guild;
             try
@@ -351,6 +339,7 @@ namespace DiscordServerCloner
                 //normally you would use an object initialiser for this, however in a try catch loop we would miss any errors
                 //so set each value indivisually for the object.
                 var ns = new ServerObject();
+                ns.LastSave = DateTime.Now;
                 //save the guild name
                 ns.ServerName = Guild.Name;
                 //save the @everyone role permissions
@@ -425,8 +414,12 @@ namespace DiscordServerCloner
 
                 //serialise the server object to a json string and save to txt file for later use.
                 var serverobj = JsonConvert.SerializeObject(ns, Formatting.Indented);
-                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"{Guild.Id}.txt"), serverobj);
-                await Channel.SendMessageAsync("Server Saved.");
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"setup/{Guild.Id}.txt"), serverobj);
+                if (ShowMessage)
+                {
+                    await Channel.SendMessageAsync("Server Saved.");
+                }
+
             }
             catch (Exception e)
             {

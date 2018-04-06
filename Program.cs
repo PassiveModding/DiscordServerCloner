@@ -52,9 +52,9 @@ namespace DiscordServerCloner
                                 "------------------------------------");
             }
 
-            if (File.Exists(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")))
+            if (File.Exists(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json")))
             {
-                ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"PairList.txt")));
+                ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json")));
             }
 
             var serviceProvider = ConfigureServices();
