@@ -198,7 +198,8 @@ namespace DiscordServerCloner.Commands
                 {
                     try
                     {
-                        if (Context.Guild.Users.Any(x => role.RoleMembers.Contains(x.Id)) && Context.Guild.Roles.Any(x => x.Name == role.RoleName))
+                        if (!Context.Guild.Users.Any(x => role.RoleMembers.Contains(x.Id)) ||
+                            Context.Guild.Roles.All(x => x.Name != role.RoleName)) continue;
                         {
                             var rol = Context.Guild.Roles.First(x => x.Name == role.RoleName);
                             foreach (var user in Context.Guild.Users.Where(x => role.RoleMembers.Contains(x.Id)))
