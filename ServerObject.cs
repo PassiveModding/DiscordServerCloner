@@ -51,9 +51,9 @@ namespace DiscordServerCloner
             }
             else
             {
-                if (File.Exists(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json")))
+                if (File.Exists(Path.Combine(AppContext.BaseDirectory, "setup/PairList.json")))
                 {
-                    ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json")));
+                    ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "setup/PairList.json")));
                 }
                 else
                 {
@@ -74,7 +74,7 @@ namespace DiscordServerCloner
                     }
                     ServerPairs.PairList.Add(nserx);
                     var serverobj = JsonConvert.SerializeObject(ServerPairs.PairList, Formatting.Indented);
-                    File.WriteAllText(Path.Combine(AppContext.BaseDirectory, $"setup/PairList.json"), serverobj);
+                    File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "setup/PairList.json"), serverobj);
                 }
                 catch (Exception e)
                 {

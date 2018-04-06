@@ -38,7 +38,7 @@ namespace DiscordServerCloner.Commands
         {
             try
             {
-                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).Where(x => x.Contains($".txt"));
+                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).Where(x => x.Contains(".txt"));
                 var embed = new EmbedBuilder
                 {
                     Description = "<ServerName> - <Guild ID> - <Last Save Time>\n" +
@@ -84,8 +84,8 @@ namespace DiscordServerCloner.Commands
                 await ReplyAsync("Server Not Saved!");
                 return;
             }
-            var embed = new EmbedBuilder();
-            embed.Title = serv.ServerName;
+
+            var embed = new EmbedBuilder {Title = serv.ServerName};
             if (serv.TextChannels.Any())
             {
                 embed.AddField("Text Channels", string.Join("\n", serv.TextChannels.Select(x => x.ChannelName)));
