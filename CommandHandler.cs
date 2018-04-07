@@ -33,48 +33,50 @@ namespace DiscordServerCloner
 
         private async Task _client_UserJoined(SocketGuildUser user)
         {
-            
-
-            if (ServerPairs.PairList.Any(x => x.LoadedServer == user.Guild.Id))
+            if (Config.Load().AutoSave)
             {
-                var server = ServerPairs.PairList.Where(x => x.LoadedServer == user.Guild.Id)
-                    .OrderBy(x => x.TimeLoaded).ToList();
-                var max = server.Max(x => x.TimeLoaded);
-                var serv = ServerObject.GetSave(server.First(x => x.TimeLoaded == max).SavedServer);
-                if (serv != null)
+                if (ServerPairs.PairList.Any(x => x.LoadedServer == user.Guild.Id))
                 {
-                    if (serv.Roles.Any())
+                    var server = ServerPairs.PairList.Where(x => x.LoadedServer == user.Guild.Id)
+                        .OrderBy(x => x.TimeLoaded).ToList();
+                    var max = server.Max(x => x.TimeLoaded);
+                    var serv = ServerObject.GetSave(server.First(x => x.TimeLoaded == max).SavedServer);
+                    if (serv != null)
                     {
-                        var list = new List<string>();
-                        foreach (var role in serv.Roles)
+                        if (serv.Roles.Any())
                         {
-                            if (!role.RoleMembers.Contains(user.Id)) continue;
-                            try
+                            var list = new List<string>();
+                            foreach (var role in serv.Roles)
                             {
-                                var NewRole = user.Guild.Roles.FirstOrDefault(x => x.Name == role.RoleName);
-                                if (NewRole != null)
+                                if (!role.RoleMembers.Contains(user.Id)) continue;
+                                try
                                 {
-                                    await user.AddRoleAsync(NewRole);
-                                    list.Add($"{NewRole.Name}");
+                                    var NewRole = user.Guild.Roles.FirstOrDefault(x => x.Name == role.RoleName);
+                                    if (NewRole != null)
+                                    {
+                                        await user.AddRoleAsync(NewRole);
+                                        list.Add($"{NewRole.Name}");
+                                    }
+                                }
+                                catch
+                                {
+                                    //
                                 }
                             }
-                            catch
-                            {
-                                //
-                            }
-                        }
 
-                        if (list.Count > 0)
-                        {
-                            var embed = new EmbedBuilder {Color = Color.Blue};
-                            embed.AddField($"{user.Username} Roles Updated in {user.Guild.Name}", $"{string.Join("\n", list)}");
-                            await user.SendMessageAsync("", false, embed.Build());
+                            if (list.Count > 0)
+                            {
+                                var embed = new EmbedBuilder {Color = Color.Blue};
+                                embed.AddField($"{user.Username} Roles Updated in {user.Guild.Name}", $"{string.Join("\n", list)}");
+                                await user.SendMessageAsync("", false, embed.Build());
+                            }
                         }
                     }
                 }
+                await ServerObject.SaveServer(user.Guild.DefaultChannel, false);
+                Logger.LogInfo($"Autosaved {user.Guild.Name}");
             }
-            await ServerObject.SaveServer(user.Guild.DefaultChannel, false);
-            Logger.LogInfo($"Autosaved {user.Guild.Name}");
+
         }
 
         private async Task _client_Ready()
@@ -86,28 +88,32 @@ namespace DiscordServerCloner
 
         private static async Task _client_JoinedGuild(SocketGuild guild)
         {
-            var embed = new EmbedBuilder();
-            embed.AddField($"{guild.CurrentUser.Username}",
-                $"Hi there, I am {guild.CurrentUser.Username}. Type `{Config.Load().Prefix}help` to see a list of my commands");
-            embed.WithColor(Color.Blue);
-            embed.AddField("DiscordServerCopier By PassiveModding", "Store: https://rocketr.net/sellers/passivemodding");
-            try
+            if (Config.Load().Stealth == false)
             {
-                await guild.DefaultChannel.SendMessageAsync("", false, embed.Build());
+                var embed = new EmbedBuilder();
+                embed.AddField($"{guild.CurrentUser.Username}",
+                    $"Hi there, I am {guild.CurrentUser.Username}. Type `{Config.Load().Prefix}help` to see a list of my commands");
+                embed.WithColor(Color.Blue);
+                embed.AddField("DiscordServerCopier By PassiveModding", "Store: https://rocketr.net/sellers/passivemodding");
+                try
+                {
+                    await guild.DefaultChannel.SendMessageAsync("", false, embed.Build());
+                }
+                catch
+                {
+                    foreach (var channel in guild.Channels)
+                        try
+                        {
+                            await ((ITextChannel) channel).SendMessageAsync("", false, embed.Build());
+                            break;
+                        }
+                        catch
+                        {
+                            //
+                        }
+                }
             }
-            catch
-            {
-                foreach (var channel in guild.Channels)
-                    try
-                    {
-                        await ((ITextChannel) channel).SendMessageAsync("", false, embed.Build());
-                        break;
-                    }
-                    catch
-                    {
-                        //
-                    }
-            }
+
         }
 
 
@@ -135,25 +141,29 @@ namespace DiscordServerCloner
 
             if (!commandsuccess)
             {
-                var embed = new EmbedBuilder();
+                if (Config.Load().Stealth == false)
+                {
+                    var embed = new EmbedBuilder();
 
-                foreach (var module in _commands.Modules)
-                foreach (var command in module.Commands)
-                    if (context.Message.Content.ToLower()
-                        .StartsWith($"{Config.Load().Prefix}{command.Name} ".ToLower()))
-                    {
-                        embed.AddField("COMMAND INFO", $"Name: {command.Name}\n" +
-                                                       $"Summary: {command.Summary}\n" +
-                                                       $"Info: {command.Remarks}");
-                        break;
-                    }
+                    foreach (var module in _commands.Modules)
+                    foreach (var command in module.Commands)
+                        if (context.Message.Content.ToLower()
+                            .StartsWith($"{Config.Load().Prefix}{command.Name} ".ToLower()))
+                        {
+                            embed.AddField("COMMAND INFO", $"Name: {command.Name}\n" +
+                                                           $"Summary: {command.Summary}\n" +
+                                                           $"Info: {command.Remarks}");
+                            break;
+                        }
 
-                embed.AddField($"ERROR {result.Error.ToString().ToUpper()}", $"Command: {context.Message}\n" +
-                                                                             $"Error: {result.ErrorReason}");
+                    embed.AddField($"ERROR {result.Error.ToString().ToUpper()}", $"Command: {context.Message}\n" +
+                                                                                 $"Error: {result.ErrorReason}");
 
 
-                embed.Color = Color.Red;
-                await context.Channel.SendMessageAsync("", false, embed.Build());
+                    embed.Color = Color.Red;
+                    await context.Channel.SendMessageAsync("", false, embed.Build());
+                    
+                }
                 Logger.LogError($"{message.Content} || {message.Author}");
             }
             else

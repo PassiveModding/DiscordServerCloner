@@ -16,6 +16,8 @@ namespace DiscordServerCloner
         public string Prefix { get; set; } = "=";
         public string Token { get; set; } = "Token";
         public bool AutoRun { get; set; }
+        public bool Stealth { get; set; } = false;
+        public bool AutoSave { get; set; } = true;
 
         public void Save(string dir = "setup/config.json")
         {
