@@ -18,6 +18,7 @@ namespace DiscordServerCloner
         public bool AutoRun { get; set; }
         public bool Stealth { get; set; } = false;
         public bool AutoSave { get; set; } = true;
+        public bool UserBot { get; set; } = false;
 
         public void Save(string dir = "setup/config.json")
         {
@@ -83,6 +84,13 @@ namespace DiscordServerCloner
                     @"After you input your token, a config will be generated at 'setup/config.json'");
                 Console.Write("Token: ");
                 cfg.Token = Console.ReadLine();
+
+              // Logger.LogInfo("Will you be using this bot as a UserBot (selfbot)? Y/N");
+              // var selbot = Console.ReadKey();
+              //  if (selbot.KeyChar == 'y' || selbot.KeyChar == 'Y')
+              //      cfg.UserBot = true;
+              //  else
+              //      cfg.UserBot = false;
 
                 Logger.LogInfo("Would you like to AutoRun the bot from now on? Y/N");
                 var type2 = Console.ReadKey();

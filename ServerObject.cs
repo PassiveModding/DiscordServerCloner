@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 
@@ -87,94 +89,152 @@ namespace DiscordServerCloner
                 await Guild.ModifyAsync(x => x.Name = ns.ServerName);
                 await thechannel.SendMessageAsync(
                     "Adding Roles! (BOT Roles Not Included, invite bots back and do these manually)");
-                if (ns.Roles.Any())
-                    foreach (var role in ns.Roles.OrderBy(x => x.position))
-                    {
-                        var rol = await Guild.CreateRoleAsync(role.RoleName,
-                            new GuildPermissions(role.GuildPermissions));
-                        await rol.ModifyAsync(x =>
-                        {
-                            x.Color = new Color(role.RawColour);
-                            x.Mentionable = role.AllowMention;
-                            x.Hoist = role.DisplaySeperately;
-                        });
-                        try
-                        {
-                            await rol.ModifyAsync(x => x.Position = role.position);
-                        }
-                        catch
-                        {
-                            RoleError = true;
-                        }
-                    }
-
-                await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = new GuildPermissions(ns.EveryonePerms));
-
-                await thechannel.SendMessageAsync("Adding Categories!");
-                if (ns.Categories.Any())
-                    foreach (var category in ns.Categories)
-                    {
-                        var cat = await Guild.CreateCategoryChannelAsync(category.CategoryName);
-                        await cat.ModifyAsync(x => x.Position = category.Position);
-                        foreach (var perm in category.CategoryPermissions)
-                            await cat.AddPermissionOverwriteAsync(Guild.Roles.First(x => x.Name == perm.PRole),
-                                new OverwritePermissions(perm.AChannelPermissions, perm.DChannelPermissions));
-                    }
-
-                await thechannel.SendMessageAsync("Adding Audio Channels!");
-                if (ns.AudioChannels.Any())
-                    foreach (var channel in ns.AudioChannels)
-                    {
-                        if (Guild.CategoryChannels.Any(x =>
-                            x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
-
-                        var chan = await Guild.CreateVoiceChannelAsync(channel.ChannelName);
-
-                        foreach (var permission in channel.ChannelPermissions)
-                            await chan.AddPermissionOverwriteAsync(Guild.Roles.First(x => x.Name == permission.PRole),
-                                new OverwritePermissions(permission.AChannelPermissions,
-                                    permission.DChannelPermissions));
-                        await chan.ModifyAsync(x =>
-                        {
-                            x.CategoryId = Guild.CategoryChannels
-                                .FirstOrDefault(y => string.Equals(y.Name, channel.category,
-                                    StringComparison.CurrentCultureIgnoreCase))?.Id;
-                            x.UserLimit = channel.UserLimit;
-                            x.Position = channel.Position;
-                        });
-                    }
-
-                await thechannel.SendMessageAsync("Adding Text Channels!");
-                if (ns.TextChannels.Any())
-                    foreach (var channel in ns.TextChannels)
-                    {
-                        if (Guild.CategoryChannels.Any(x =>
-                            x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
-
-                        var chan = await Guild.CreateTextChannelAsync(channel.ChannelName);
-
-                        foreach (var permission in channel.ChannelPermissions)
-                            await chan.AddPermissionOverwriteAsync(Guild.Roles.First(x => x.Name == permission.PRole),
-                                new OverwritePermissions(permission.AChannelPermissions,
-                                    permission.DChannelPermissions));
-                        await chan.ModifyAsync(x =>
-                        {
-                            x.IsNsfw = channel.IsNSFW;
-                            x.CategoryId = Guild.CategoryChannels
-                                .FirstOrDefault(y => string.Equals(y.Name, channel.category,
-                                    StringComparison.CurrentCultureIgnoreCase))?.Id;
-                            x.Position = channel.Position;
-                            x.Topic = channel.topic;
-                        });
-                    }
-
-                await thechannel.SendMessageAsync("Complete!\n" +
-                                                  "NOTE: Use LoadBans to load the previous server's bans!");
-                if (RoleError)
+                try
                 {
-                    await thechannel.SendMessageAsync("Error Modifying Position of some roles (insufficient permissions in origin server)\n" +
-                                                      "You can manually rearrange roles to fix this!");
+                    if (ns.Roles.Any())
+                        foreach (var role in ns.Roles.OrderBy(x => x.position))
+                        {
+                            if (Guild.Roles.Any(x =>
+                                string.Equals(x.Name, role.RoleName, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+                                await Guild.Roles.First(x => x.Name == role.RoleName).DeleteAsync();
+                            }
+                            IRole rol = await Guild.CreateRoleAsync(role.RoleName, new GuildPermissions(role.GuildPermissions));
+                            await rol.ModifyAsync(x =>
+                            {
+                                x.Color = new Color(role.RawColour);
+                                x.Mentionable = role.AllowMention;
+                                x.Hoist = role.DisplaySeperately;
+                            });
+                            try
+                            {
+                                await rol.ModifyAsync(x => x.Position = role.position);
+                            }
+                            catch
+                            {
+                                RoleError = true;
+                            }
+                        }
+
+                    await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = new GuildPermissions(ns.EveryonePerms));
+
+                    await thechannel.SendMessageAsync("Adding Categories!");
+                    if (ns.Categories.Any())
+                        foreach (var category in ns.Categories)
+                        {
+
+                            ICategoryChannel cat;
+                            if (Guild.CategoryChannels.Any(x => string.Equals(x.Name, category.CategoryName, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+                                cat = Guild.CategoryChannels.First(x => string.Equals(x.Name, category.CategoryName, StringComparison.CurrentCultureIgnoreCase));
+                            }
+                            else
+                            {
+                                cat = await Guild.CreateCategoryChannelAsync(category.CategoryName);
+                            }
+                            await cat.ModifyAsync(x => x.Position = category.Position);
+                            if (category.CategoryPermissions.Any())
+                                foreach (var perm in category.CategoryPermissions)
+                                {
+                                    var grole = Guild.Roles.FirstOrDefault(x => x.Name == perm.PRole);
+                                    if (grole != null)
+                                    {
+                                        await cat.AddPermissionOverwriteAsync(grole,
+                                            new OverwritePermissions(perm.AChannelPermissions, perm.DChannelPermissions));
+                                    }
+
+                                }
+                        }
+
+                    await thechannel.SendMessageAsync("Adding Audio Channels!");
+                    if (ns.AudioChannels.Any())
+                        foreach (var channel in ns.AudioChannels)
+                        {
+                            if (Guild.CategoryChannels.Any(x =>
+                                x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
+                            IVoiceChannel chan;
+                            if (Guild.VoiceChannels.Any(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+                                chan = Guild.VoiceChannels.First(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase));
+                            }
+                            else
+                            {
+                                chan = await Guild.CreateVoiceChannelAsync(channel.ChannelName);
+                            }
+                            if (channel.ChannelPermissions.Any())
+                                foreach (var permission in channel.ChannelPermissions)
+                                {
+                                    var grole = Guild.Roles.FirstOrDefault(x => x.Name == permission.PRole);
+                                    if (grole != null)
+                                    {
+                                        await chan.AddPermissionOverwriteAsync(grole,
+                                            new OverwritePermissions(permission.AChannelPermissions,
+                                                permission.DChannelPermissions));
+                                    }
+                                }
+                            await chan.ModifyAsync(x =>
+                            {
+                                x.CategoryId = Guild.CategoryChannels
+                                    .FirstOrDefault(y => string.Equals(y.Name, channel.category,
+                                        StringComparison.CurrentCultureIgnoreCase))?.Id;
+                                x.UserLimit = channel.UserLimit;
+                                x.Position = channel.Position;
+                            });
+                        }
+
+                    await thechannel.SendMessageAsync("Adding Text Channels!");
+                    if (ns.TextChannels.Any())
+                        foreach (var channel in ns.TextChannels)
+                        {
+                            if (Guild.CategoryChannels.Any(x =>
+                                x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
+                            ITextChannel chan;
+                            if (Guild.TextChannels.Any(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase)))
+                            {
+                                chan = Guild.TextChannels.First(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase));
+                            }
+                            else
+                            {
+                                chan = await Guild.CreateTextChannelAsync(channel.ChannelName);
+                            }
+                            if (channel.ChannelPermissions.Any())
+                                foreach (var permission in channel.ChannelPermissions)
+                                {
+                                    var grole = Guild.Roles.FirstOrDefault(x => x.Name == permission.PRole);
+                                    if (grole != null)
+                                    {
+                                            await chan.AddPermissionOverwriteAsync(grole,
+                                                new OverwritePermissions(permission.AChannelPermissions,
+                                                    permission.DChannelPermissions));
+                                    }
+
+                                }
+
+                            await chan.ModifyAsync(x =>
+                            {
+                                x.IsNsfw = channel.IsNSFW;
+                                x.CategoryId = Guild.CategoryChannels
+                                    .FirstOrDefault(y => string.Equals(y.Name, channel.category,
+                                        StringComparison.CurrentCultureIgnoreCase))?.Id;
+                                x.Position = channel.Position;
+                                x.Topic = channel.topic;
+                            });
+                        }
+
+                    await thechannel.SendMessageAsync("Complete!\n" +
+                                                      "NOTE: Use LoadBans to load the previous server's bans!");
+                    if (RoleError)
+                    {
+                        await thechannel.SendMessageAsync("Error Modifying Position of some roles (insufficient permissions in origin server)\n" +
+                                                          "You can manually rearrange roles to fix this!");
+                    }
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    await thechannel.SendMessageAsync(e.ToString());
+                }
+
             }
         }
 

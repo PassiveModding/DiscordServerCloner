@@ -40,7 +40,14 @@ namespace DiscordServerCloner
 
             try
             {
-                await Client.LoginAsync(TokenType.Bot, token);
+                if (Config.Load().UserBot)
+                {
+                    await Client.LoginAsync(TokenType.User, token);
+                }
+                else
+                {
+                    await Client.LoginAsync(TokenType.Bot, token);
+                }
                 await Client.StartAsync();
             }
             catch (Exception e)
