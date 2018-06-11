@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 
@@ -31,18 +29,34 @@ namespace DiscordServerCloner
         public IEnumerable<Role> Roles { get; set; }
         public IEnumerable<ulong> Bans { get; set; }
         public ulong EveryonePerms { get; set; }
-        public IEnumerable<ulong> Users { get; set; }
+        public List<UserC> Users { get; set; }
+
+        public class UserC
+        {
+            public ulong UserID { get; set; }
+            public string Nickname { get; set; }
+        }
         public DateTime LastSave { get; set; } = DateTime.MinValue;
 
         public static ServerObject GetSave(ulong GuildId)
         {
-            var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).First(x => x.Contains($"{GuildId}.txt"));
-            var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
-            return ns;
+            try
+            {
+                var saves = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "setup/")).First(x => x.Contains($"{GuildId}.txt"));
+                var ns = JsonConvert.DeserializeObject<ServerObject>(File.ReadAllText(saves));
+                return ns;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
         }
 
         public static async Task LoadServer(SocketTextChannel thechannel, ulong GuildId = 0)
         {
+            
             var RoleError = false;
             var Guild = thechannel.Guild;
             if (GuildId == 0)
@@ -53,6 +67,7 @@ namespace DiscordServerCloner
             }
             else
             {
+                Console.WriteLine("Loading Server");
                 if (File.Exists(Path.Combine(AppContext.BaseDirectory, "setup/PairList.json")))
                 {
                     ServerPairs.PairList = JsonConvert.DeserializeObject<List<ServerPairs.serversused>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "setup/PairList.json")));
@@ -62,6 +77,7 @@ namespace DiscordServerCloner
                     File.CreateText(Path.Combine(AppContext.BaseDirectory, "setup/PairList.json")).Close();
                 }
 
+                Console.WriteLine("Pairing Guild");
                 try
                 {
                     var nserx = new ServerPairs.serversused
@@ -81,145 +97,220 @@ namespace DiscordServerCloner
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    throw;
+                    throw new Exception("Error Loading Server Config. Please run the SaveServer command in the server you wish to load again");
                 }
 
                 var ns = GetSave(GuildId);
                 await thechannel.SendMessageAsync("Loaded Server Config!");
                 await Guild.ModifyAsync(x => x.Name = ns.ServerName);
-                await thechannel.SendMessageAsync(
-                    "Adding Roles! (BOT Roles Not Included, invite bots back and do these manually)");
+                await thechannel.SendMessageAsync("Adding Roles! (BOT Roles Not Included, invite bots back and do these manually)");
                 try
                 {
-                    if (ns.Roles.Any())
-                        foreach (var role in ns.Roles.OrderBy(x => x.position))
-                        {
-                            if (Guild.Roles.Any(x =>
-                                string.Equals(x.Name, role.RoleName, StringComparison.CurrentCultureIgnoreCase)))
+                    try
+                    {
+                        if (ns.Roles.Any())
+                            foreach (var role in ns.Roles.OrderByDescending(x => x.position))
                             {
-                                await Guild.Roles.First(x => x.Name == role.RoleName).DeleteAsync();
-                            }
-                            IRole rol = await Guild.CreateRoleAsync(role.RoleName, new GuildPermissions(role.GuildPermissions));
-                            await rol.ModifyAsync(x =>
-                            {
-                                x.Color = new Color(role.RawColour);
-                                x.Mentionable = role.AllowMention;
-                                x.Hoist = role.DisplaySeperately;
-                            });
-                            try
-                            {
-                                await rol.ModifyAsync(x => x.Position = role.position);
-                            }
-                            catch
-                            {
-                                RoleError = true;
-                            }
-                        }
-
-                    await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = new GuildPermissions(ns.EveryonePerms));
-
-                    await thechannel.SendMessageAsync("Adding Categories!");
-                    if (ns.Categories.Any())
-                        foreach (var category in ns.Categories)
-                        {
-
-                            ICategoryChannel cat;
-                            if (Guild.CategoryChannels.Any(x => string.Equals(x.Name, category.CategoryName, StringComparison.CurrentCultureIgnoreCase)))
-                            {
-                                cat = Guild.CategoryChannels.First(x => string.Equals(x.Name, category.CategoryName, StringComparison.CurrentCultureIgnoreCase));
-                            }
-                            else
-                            {
-                                cat = await Guild.CreateCategoryChannelAsync(category.CategoryName);
-                            }
-                            await cat.ModifyAsync(x => x.Position = category.Position);
-                            if (category.CategoryPermissions.Any())
-                                foreach (var perm in category.CategoryPermissions)
+                                try
                                 {
-                                    var grole = Guild.Roles.FirstOrDefault(x => x.Name == perm.PRole);
-                                    if (grole != null)
+                                    if (Guild.Roles.Any(x => string.Equals(x.Name, role.RoleName, StringComparison.CurrentCultureIgnoreCase)))
                                     {
-                                        await cat.AddPermissionOverwriteAsync(grole,
-                                            new OverwritePermissions(perm.AChannelPermissions, perm.DChannelPermissions));
+                                        await Guild.Roles.First(x => x.Name == role.RoleName).DeleteAsync();
                                     }
-
-                                }
-                        }
-
-                    await thechannel.SendMessageAsync("Adding Audio Channels!");
-                    if (ns.AudioChannels.Any())
-                        foreach (var channel in ns.AudioChannels)
-                        {
-                            if (Guild.CategoryChannels.Any(x =>
-                                x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
-                            IVoiceChannel chan;
-                            if (Guild.VoiceChannels.Any(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase)))
-                            {
-                                chan = Guild.VoiceChannels.First(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase));
-                            }
-                            else
-                            {
-                                chan = await Guild.CreateVoiceChannelAsync(channel.ChannelName);
-                            }
-                            if (channel.ChannelPermissions.Any())
-                                foreach (var permission in channel.ChannelPermissions)
-                                {
-                                    var grole = Guild.Roles.FirstOrDefault(x => x.Name == permission.PRole);
-                                    if (grole != null)
+                                    IRole rol = await Guild.CreateRoleAsync(role.RoleName, new GuildPermissions(role.GuildPermissions));
+                                    await rol.ModifyAsync(x =>
                                     {
-                                        await chan.AddPermissionOverwriteAsync(grole,
-                                            new OverwritePermissions(permission.AChannelPermissions,
-                                                permission.DChannelPermissions));
+                                        x.Color = new Color(role.RawColour);
+                                        x.Mentionable = role.AllowMention;
+                                        x.Hoist = role.DisplaySeperately;
+                                    });
+                                    Console.WriteLine($"Role Added: {rol.Name}");
+                                    try
+                                    {
+                                        await rol.ModifyAsync(x => x.Position = role.position);
+                                        Console.WriteLine($"Role Positioned: {rol.Name}");
+                                    }
+                                    catch
+                                    {
+                                        Console.WriteLine($"Role Positioning Error: {rol.Name}");
+                                        RoleError = true;
                                     }
                                 }
-                            await chan.ModifyAsync(x =>
-                            {
-                                x.CategoryId = Guild.CategoryChannels
-                                    .FirstOrDefault(y => string.Equals(y.Name, channel.category,
-                                        StringComparison.CurrentCultureIgnoreCase))?.Id;
-                                x.UserLimit = channel.UserLimit;
-                                x.Position = channel.Position;
-                            });
-                        }
-
-                    await thechannel.SendMessageAsync("Adding Text Channels!");
-                    if (ns.TextChannels.Any())
-                        foreach (var channel in ns.TextChannels)
-                        {
-                            if (Guild.CategoryChannels.Any(x =>
-                                x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
-                            ITextChannel chan;
-                            if (Guild.TextChannels.Any(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase)))
-                            {
-                                chan = Guild.TextChannels.First(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase));
-                            }
-                            else
-                            {
-                                chan = await Guild.CreateTextChannelAsync(channel.ChannelName);
-                            }
-                            if (channel.ChannelPermissions.Any())
-                                foreach (var permission in channel.ChannelPermissions)
+                                catch (Exception e)
                                 {
-                                    var grole = Guild.Roles.FirstOrDefault(x => x.Name == permission.PRole);
-                                    if (grole != null)
-                                    {
-                                            await chan.AddPermissionOverwriteAsync(grole,
-                                                new OverwritePermissions(permission.AChannelPermissions,
-                                                    permission.DChannelPermissions));
-                                    }
+                                    Console.WriteLine(e);
+                                }
+                            }
 
+                        await Guild.EveryoneRole.ModifyAsync(x => x.Permissions = new GuildPermissions(ns.EveryonePerms));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
+                    try
+                    {
+                        await thechannel.SendMessageAsync("Adding Categories!");
+                        if (ns.Categories.Any())
+                            foreach (var category in ns.Categories)
+                            {
+                                try
+                                {
+                                    ICategoryChannel cat;
+                                    if (Guild.CategoryChannels.Any(x => string.Equals(x.Name, category.CategoryName, StringComparison.CurrentCultureIgnoreCase)))
+                                    {
+                                        cat = Guild.CategoryChannels.First(x => string.Equals(x.Name, category.CategoryName, StringComparison.CurrentCultureIgnoreCase));
+                                    }
+                                    else
+                                    {
+                                        cat = await Guild.CreateCategoryChannelAsync(category.CategoryName);
+                                        Console.Write($"Category Added: {cat.Name}");
+                                    }
+                                    await cat.ModifyAsync(x => x.Position = category.Position);
+                                    Console.Write($"Category Position Set: {cat.Name}");
+                                    if (category.CategoryPermissions.Any())
+                                    {
+                                        foreach (var perm in category.CategoryPermissions)
+                                        {
+                                            var grole = Guild.Roles.FirstOrDefault(x => x.Name == perm.PRole);
+                                            if (grole != null)
+                                            {
+                                                await cat.AddPermissionOverwriteAsync(grole,
+                                                    new OverwritePermissions(perm.AChannelPermissions, perm.DChannelPermissions));
+                                            }
+                                        }
+                                        Console.Write($"Category Permissions Set: {cat.Name}");
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e);
                                 }
 
-                            await chan.ModifyAsync(x =>
+                            }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
+                    try
+                    {
+                        await thechannel.SendMessageAsync("Adding Audio Channels!");
+                        if (ns.AudioChannels.Any())
+                            foreach (var channel in ns.AudioChannels)
                             {
-                                x.IsNsfw = channel.IsNSFW;
-                                x.CategoryId = Guild.CategoryChannels
-                                    .FirstOrDefault(y => string.Equals(y.Name, channel.category,
-                                        StringComparison.CurrentCultureIgnoreCase))?.Id;
-                                x.Position = channel.Position;
-                                x.Topic = channel.topic;
-                            });
-                        }
+                                try
+                                {
+                                    if (Guild.CategoryChannels.Any(x => x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
+                                    IVoiceChannel chan;
+                                    if (Guild.VoiceChannels.Any(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase)))
+                                    {
+                                        chan = Guild.VoiceChannels.First(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase));
+                                    }
+                                    else
+                                    {
+                                        chan = await Guild.CreateVoiceChannelAsync(channel.ChannelName);
+                                        Console.WriteLine($"Audio Channel Created: {chan.Name}");
+                                    }
+
+                                    if (channel.ChannelPermissions.Any())
+                                    {
+                                        foreach (var permission in channel.ChannelPermissions)
+                                        {
+                                            var grole = Guild.Roles.FirstOrDefault(x => x.Name == permission.PRole);
+                                            if (grole != null)
+                                            {
+                                                await chan.AddPermissionOverwriteAsync(grole,
+                                                    new OverwritePermissions(permission.AChannelPermissions,
+                                                        permission.DChannelPermissions));
+                                            }
+                                        }
+                                        Console.WriteLine($"Audio Permissions Set: {chan.Name}");
+                                    }
+
+                                    await chan.ModifyAsync(x =>
+                                    {
+                                        x.CategoryId = Guild.CategoryChannels
+                                            .FirstOrDefault(y => string.Equals(y.Name, channel.category,
+                                                StringComparison.CurrentCultureIgnoreCase))?.Id;
+                                        x.UserLimit = channel.UserLimit;
+                                        x.Position = channel.Position;
+                                    });
+                                    Console.WriteLine($"Audio Position Set: {chan.Name}");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e);
+                                }
+                            }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
+                    try
+                    {
+                        await thechannel.SendMessageAsync("Adding Text Channels!");
+                        if (ns.TextChannels.Any())
+                            foreach (var channel in ns.TextChannels)
+                            {
+                                try
+                                {
+                                    if (Guild.CategoryChannels.Any(x => x.Name == channel.ChannelName && x.Position == channel.Position)) continue;
+                                    ITextChannel chan;
+                                    if (Guild.TextChannels.Any(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase)))
+                                    {
+                                        chan = Guild.TextChannels.First(x => string.Equals(x.Name, channel.ChannelName, StringComparison.CurrentCultureIgnoreCase));
+                                    }
+                                    else
+                                    {
+                                        chan = await Guild.CreateTextChannelAsync(channel.ChannelName);
+                                        Console.WriteLine($"Text Channel Created: {chan.Name}");
+                                    }
+
+                                    if (channel.ChannelPermissions.Any())
+                                    {
+                                        foreach (var permission in channel.ChannelPermissions)
+                                        {
+                                            var grole = Guild.Roles.FirstOrDefault(x => x.Name == permission.PRole);
+                                            if (grole != null)
+                                            {
+                                                await chan.AddPermissionOverwriteAsync(grole,
+                                                    new OverwritePermissions(permission.AChannelPermissions,
+                                                        permission.DChannelPermissions));
+                                            }
+
+                                        }
+                                        Console.WriteLine($"Text Permissions Set: {chan.Name}");
+                                    }
+
+                                    await chan.ModifyAsync(x =>
+                                    {
+                                        x.IsNsfw = channel.IsNSFW;
+                                        x.CategoryId = Guild.CategoryChannels
+                                            .FirstOrDefault(y => string.Equals(y.Name, channel.category,
+                                                StringComparison.CurrentCultureIgnoreCase))?.Id;
+                                        x.Position = channel.Position;
+                                        x.Topic = channel.topic;
+                                    });
+                                    Console.WriteLine($"Text Position Set: {chan.Name}");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e);
+                                }
+
+                            }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
 
                     await thechannel.SendMessageAsync("Complete!\n" +
                                                       "NOTE: Use LoadBans to load the previous server's bans!");
@@ -326,7 +417,7 @@ namespace DiscordServerCloner
                 {
                     try
                     {
-                        var user = Client.GetUser(uID);
+                        var user = Client.GetUser(uID.UserID);
 
                         await user.SendMessageAsync("", false, embed.Build());
                     }
@@ -470,7 +561,11 @@ namespace DiscordServerCloner
                 ns.Bans = Guild.GetBansAsync().Result.Select(x => x.User.Id);
 
                 //save a list of all the user IDs from the last server
-                ns.Users = Guild.Users.Select(x => x.Id);
+                ns.Users = Guild.Users.Select(x => new UserC
+                {
+                    Nickname = x.Nickname,
+                    UserID = x.Id
+                }).ToList();
 
                 //serialise the server object to a json string and save to txt file for later use.
                 var serverobj = JsonConvert.SerializeObject(ns, Formatting.Indented);

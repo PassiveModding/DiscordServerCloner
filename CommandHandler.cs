@@ -43,33 +43,55 @@ namespace DiscordServerCloner
                     var serv = ServerObject.GetSave(server.First(x => x.TimeLoaded == max).SavedServer);
                     if (serv != null)
                     {
-                        if (serv.Roles.Any())
+                        if (serv.Roles.Any() || serv.Users.Any(x => x.UserID == user.Id))
                         {
-                            var list = new List<string>();
-                            foreach (var role in serv.Roles)
+                            var rlist = new List<string>();
+                            var embed = new EmbedBuilder {Color = Color.Blue};
+                            if (serv.Roles.Any())
                             {
-                                if (!role.RoleMembers.Contains(user.Id)) continue;
-                                try
+                                foreach (var role in serv.Roles)
                                 {
-                                    var NewRole = user.Guild.Roles.FirstOrDefault(x => x.Name == role.RoleName);
-                                    if (NewRole != null)
+                                    if (!role.RoleMembers.Contains(user.Id)) continue;
+                                    try
                                     {
-                                        await user.AddRoleAsync(NewRole);
-                                        list.Add($"{NewRole.Name}");
+                                        var NewRole = user.Guild.Roles.FirstOrDefault(x => x.Name == role.RoleName);
+                                        if (NewRole != null)
+                                        {
+                                            await user.AddRoleAsync(NewRole);
+                                            rlist.Add($"{NewRole.Name}");
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        //
                                     }
                                 }
-                                catch
+                                if (rlist.Count > 0)
                                 {
-                                    //
+                                    embed.AddField($"{user.Username} Roles Updated in {user.Guild.Name}", $"{string.Join("\n", rlist)}");
                                 }
                             }
 
-                            if (list.Count > 0)
+                            if (serv.Users.Any(x => x.UserID == user.Id))
                             {
-                                var embed = new EmbedBuilder {Color = Color.Blue};
-                                embed.AddField($"{user.Username} Roles Updated in {user.Guild.Name}", $"{string.Join("\n", list)}");
-                                await user.SendMessageAsync("", false, embed.Build());
+                                var u = serv.Users.First(x => x.UserID == user.Id);
+                                if (u.Nickname != null)
+                                {
+                                    try
+                                    {
+                                        await user.ModifyAsync(x => x.Nickname = u.Nickname);
+                                        embed.AddField("Nickname", $"User Nickname Updated to {u.Nickname}");
+                                    }
+                                    catch
+                                    {
+                                        //
+                                    }
+                                    
+                                }
                             }
+                            
+
+                            await user.SendMessageAsync("", false, embed.Build());
                         }
                     }
                 }
