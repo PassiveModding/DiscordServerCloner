@@ -165,10 +165,10 @@ namespace DiscordServerCloner
                                     else
                                     {
                                         cat = await Guild.CreateCategoryChannelAsync(category.CategoryName);
-                                        Console.Write($"Category Added: {cat.Name}");
+                                        Console.WriteLine($"Category Added: {cat.Name}");
                                     }
                                     await cat.ModifyAsync(x => x.Position = category.Position);
-                                    Console.Write($"Category Position Set: {cat.Name}");
+                                    Console.WriteLine($"Category Position Set: {cat.Name}");
                                     if (category.CategoryPermissions.Any())
                                     {
                                         foreach (var perm in category.CategoryPermissions)
@@ -180,7 +180,7 @@ namespace DiscordServerCloner
                                                     new OverwritePermissions(perm.AChannelPermissions, perm.DChannelPermissions));
                                             }
                                         }
-                                        Console.Write($"Category Permissions Set: {cat.Name}");
+                                        Console.WriteLine($"Category Permissions Set: {cat.Name}");
                                     }
                                 }
                                 catch (Exception e)
