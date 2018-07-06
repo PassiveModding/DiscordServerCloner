@@ -9,6 +9,7 @@
 
 ## New Bot
 Get The Bot @Cloner on discord now
+
 Refer to previous commits for old self hosted version:
 https://github.com/PassiveModding/DiscordServerCloner/commit/404e69688a76c07d12e22d4f0632eb3ba593ea18
 
