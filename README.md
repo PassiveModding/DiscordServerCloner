@@ -25,49 +25,78 @@ https://discord.me/passive
 
 #### Text Channels
 >Role Permissions
+
 >Positioning
+
 >Topic
+
 >NSFW Status
+
 >Messages
 
 #### Voice Channels
 >Role Permissions
+
 >Position
+
 >Bitrate
+
 >User Limit
 
 #### Roles
 >Position
+
 >Color
+
 >Permissions
+
 >Members
 
 #### Categories
 >Sub Channels
+
 .Permissions
+
 >Position
+
 
 #### Messages
 >Embeds
+
 >Pinned messages
+
 >All messages
+
 >Author info
+
 >Attachment URLs
 
 #### Webhook Live Messages
 >User info
+
 >User avatar
+
 >Message content
+
 >Embeds
+
 >Attachments
 
 #### Main Server Content
 >Emotes (name + image)
+
 >Server Logo
+
 >Server Name
+
 >Message notification level 
+
 >User verification level
+
 >Bans
+
 >Users
+
 >User nicknames & roles
+
 >Auto-Return nicknames and roles for users
