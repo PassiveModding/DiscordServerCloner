@@ -55,7 +55,7 @@ https://discord.me/passive
 #### Categories
 >Sub Channels
 
-.Permissions
+>Permissions
 
 >Position
 
