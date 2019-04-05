@@ -1,7 +1,7 @@
 # DiscordServerCloner
 <p align="center">
   </a>
-   <a href="https://discordapp.com/oauth2/authorize?client_id=500791922466750479&scope=bot&permissions=2146958591"><img src="https://img.shields.io/badge/Invite-Cloner-7289DA.svg?longCache=true&style=flat-square&logo=discord"/></a>
+   <a href="https://discordapp.com/oauth2/authorize?client_id=500791607839162376&scope=bot&permissions=2146958591"><img src="https://img.shields.io/badge/Invite-Cloner-7289DA.svg?longCache=true&style=flat-square&logo=discord"/></a>
    <br/>
    <a href="https://www.buymeacoffee.com/Passive" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/black_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 </p>
@@ -16,7 +16,7 @@ https://github.com/PassiveModding/DiscordServerCloner/commit/404e69688a76c07d12e
 #### Self Bot for saving server configs for any server (you can use this to steal other people's servers)
 https://github.com/PassiveModding/ServerSaverSelf
 #### Bot Invite 
-https://discordapp.com/oauth2/authorize?client_id=500791922466750479&scope=bot&permissions=2146958591
+https://discordapp.com/oauth2/authorize?client_id=500791607839162376&scope=bot&permissions=2146958591
 ##### Get Tokens
 https://rocketr.net/sellers/passivemodding
 ##### Video Tutorial
