@@ -18,9 +18,9 @@ https://github.com/PassiveModding/ServerSaverSelf
 #### Bot Invite 
 https://discordapp.com/oauth2/authorize?client_id=500791607839162376&scope=bot&permissions=2146958591
 ##### Get Tokens
-https://rocketr.net/sellers/passivemodding
+https://passivemodding.selly.store/category/074cef
 ##### Video Tutorial
-https://www.youtube.com/watch?v=PaofGf2p0_w
+https://www.youtube.com/watch?v=IvDy5O9tmRo
 ##### Support Server
 https://discord.me/passive
 
