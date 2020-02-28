@@ -15,8 +15,9 @@ Best results are achieved if you load a save in a new server with no channels or
 1. attach your `.clone` file with the message `clone.load`
 
    ![](.gitbook/assets/image.png)  
-   - Additionally you can specify `nobans` and/or `nomessages` to stop the bot from copying user bans and channel messages over. Do so by running the load command with those parameters ex. `clone.load nobans` or `clone.load nobans nomessages`
+   - Additionally you can specify `nobans` to stop the bot from copying user bans over. Do so by running the load command with the `nobans` parameter ex. `clone.load nobans` 
 
 2. The bot will automatically create roles, channels, categories etc. and apply the correct settings and permissions to each
 3. Enjoy your backup server
+4. In order to load messages, use the `clone.loadmessages` command in the channel you wish to load messages for, you will need to attach the `.clone` file like in step 1.
 

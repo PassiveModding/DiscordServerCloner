@@ -26,13 +26,16 @@
         </p>
         <p><code>clone.load nobans</code>
         </p>
-        <p><code>clone.load nomessages</code>
-        </p>
-        <p><code>clone.load nobans nomessages</code>
-        </p>
       </td>
       <td style="text-align:left">Loads the attached <code>.clone</code> file into the current server, requires
         both the bot and user have administrator permissions in the server</td>
+    </tr>
+    <tr>
+      <td style="text-align:left"><b>clone.loadmessages</b>
+      </td>
+      <td style="text-align:left"></td>
+      <td style="text-align:left">Loads the attached <code>.clone</code> file and finds the current channel
+        by name. Creates a webhook and sends the saved messages to that channel.</td>
     </tr>
     <tr>
       <td style="text-align:left"><b>clone.clear</b>
