@@ -19,5 +19,5 @@ Best results are achieved if you load a save in a new server with no channels or
 
 2. The bot will automatically create roles, channels, categories etc. and apply the correct settings and permissions to each
 3. Enjoy your backup server
-4. In order to load messages, use the `clone.loadmessages` command in the channel you wish to load messages for, you will need to attach the `.clone` file like in step 1.
+4. In order to load messages, use the `clone.loadmessages` command in the channel you wish to load messages for, you will need to attach the `.clone` file like in step 1 or a `.messages.clone` file generated from either the `clone.savemessages` or `clone.save <messageCount>` command. 
 

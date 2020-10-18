@@ -52,7 +52,9 @@
       <td style="text-align:left">Unbans all banned users from the server</td>
     </tr>
   </tbody>
-</table>## Profile <a id="profile"></a>
+</table>
+
+## Profile <a id="profile"></a>
 
 | Command | Parameters | Summary |
 | :--- | :--- | :--- |
