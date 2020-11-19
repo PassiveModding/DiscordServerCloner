@@ -2,6 +2,7 @@
 
 * [Welcome](README.md)
 * [All Commands](all-commands.md)
+* [Pricing](pricing.md)
 
 ## Saving and Loading Servers
 
