@@ -3,6 +3,8 @@
 * [Welcome](README.md)
 * [All Commands](all-commands.md)
 * [Pricing](pricing.md)
+* [Get Uses](get-uses.md)
+* [Support Discord](support-discord.md)
 
 ## Saving and Loading Servers
 
