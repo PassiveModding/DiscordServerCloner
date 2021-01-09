@@ -38,6 +38,14 @@
         by name. Creates a webhook and sends the saved messages to that channel.</td>
     </tr>
     <tr>
+      <td style="text-align:left"><b>clone.loadroles</b>
+      </td>
+      <td style="text-align:left"></td>
+      <td style="text-align:left">Loads 50 roles from the attached <code>.clone</code> file, this command
+        may need to be run multiple times if the backup has more than 50 roles
+        contained</td>
+    </tr>
+    <tr>
       <td style="text-align:left"><b>clone.clear</b>
       </td>
       <td style="text-align:left"><code>clone.clear confirmation_key</code>
