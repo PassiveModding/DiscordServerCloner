@@ -1,21 +1,9 @@
----
-description: >-
-  Welcome to the documentation of Cloner! The best Discord server backup and
-  copy bot!
----
+Cloner has moved...
 
-# Welcome
+For a full rundown of the bot and it's features, please visit
 
-## Getting started <a id="getting-started"></a>
+https://psiv.me/cloner.html
 
-For saving a server you have two options,
+If you wish to support development, please consider
 
-1. ​[Use Cloner directly](saving-a-server-using-cloner.md) - Requires both you and the bot have Administrator permissions in the server - Requires that you have purchased uses for cloner in order to save
-2. ​[Use a Self bot ](saving-and-loading-servers/saving-a-server-using-the-selfbot.md)- Requires that you are a member of the server you wish to save - Against discords TOS - Allows you to save any discord server you have access to
-
-{% page-ref page="saving-a-server-using-cloner.md" %}
-
-
-
-
-
+<a href="https://www.buymeacoffee.com/Jaquesy"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=Jaquesy&button_colour=BD5FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00"></a>
