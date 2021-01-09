@@ -9,6 +9,7 @@
 | Saving a server + messages of a channel | 1 use for the server + 1 use per 1000 messages saved |
 | Loading a server | 1 use |
 | Loading messages of a channel | 1 use per 1000 messages |
+| Loading Roles | 1 use per 50 roles |
 
 NOTE:
 
